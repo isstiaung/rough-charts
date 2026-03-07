@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@font-face {
+  font-family: "xkcd";
+  src: url("/fonts/xkcd-script.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  font-family: "xkcd", cursive;
+  margin: 0;
+  min-height: 100vh;
+}
