@@ -9,6 +9,7 @@ import { chartColors } from "./shared/colors";
 import { drawAxes } from "./shared/drawAxis";
 import { drawLegend } from "./shared/drawLegend";
 import type { DataRow, FillStyle } from "@/lib/types";
+import type { TooltipData } from "../ChartCanvas";
 
 interface Props {
   width: number;
@@ -20,6 +21,8 @@ interface Props {
   yLabel: string;
   roughness: number;
   fillStyle: FillStyle;
+  onShowTooltip: (data: TooltipData) => void;
+  onHideTooltip: () => void;
 }
 
 function LineChart({
@@ -32,18 +35,23 @@ function LineChart({
   yLabel,
   roughness,
   fillStyle,
+  onShowTooltip,
+  onHideTooltip,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg || rows.length === 0 || seriesNames.length === 0) return;
+    if (!svg || width <= 0 || rows.length === 0 || seriesNames.length === 0)
+      return;
 
     while (svg.firstChild) svg.removeChild(svg.firstChild);
 
     const rc = rough.svg(svg);
     const chartWidth = width - margin.left - margin.right;
     const chartHeight = height - margin.top - margin.bottom;
+
+    if (chartWidth <= 0 || chartHeight <= 0) return;
 
     const labels = rows.map((r) => r.label);
     const allValues = rows.flatMap((r) => r.values);
@@ -54,7 +62,7 @@ function LineChart({
       .range([0, chartWidth])
       .padding(0.5);
     const yScale = scaleLinear()
-      .domain([0, maxVal * 1.1])
+      .domain([0, maxVal > 0 ? maxVal * 1.15 : 10])
       .range([chartHeight, 0]);
 
     const yTicks = yScale.ticks(5);
@@ -75,7 +83,10 @@ function LineChart({
       const color = chartColors[seriesIdx % chartColors.length];
       const points: [number, number][] = rows.map((row) => {
         const x = xScale(row.label) ?? 0;
-        return [margin.left + x, margin.top + yScale(row.values[seriesIdx] ?? 0)];
+        return [
+          margin.left + x,
+          margin.top + yScale(row.values[seriesIdx] ?? 0),
+        ];
       });
 
       // Draw line using roughjs linearPath
@@ -88,9 +99,9 @@ function LineChart({
         svg.appendChild(line);
       }
 
-      // Draw points
-      points.forEach(([x, y]) => {
-        const circle = rc.circle(x, y, 8, {
+      // Draw points with hover areas
+      points.forEach(([x, y], rowIdx) => {
+        const circle = rc.circle(x, y, 10, {
           fill: color,
           fillStyle: "solid",
           stroke: color,
@@ -98,11 +109,40 @@ function LineChart({
           roughness: roughness * 0.3,
         });
         svg.appendChild(circle);
+
+        // Larger invisible hover area
+        const hitArea = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "circle"
+        );
+        hitArea.setAttribute("cx", String(x));
+        hitArea.setAttribute("cy", String(y));
+        hitArea.setAttribute("r", "12");
+        hitArea.setAttribute("fill", "transparent");
+        hitArea.setAttribute("cursor", "pointer");
+        hitArea.addEventListener("mouseenter", (e) => {
+          const row = rows[rowIdx];
+          onShowTooltip({
+            x: (e as MouseEvent).offsetX,
+            y: (e as MouseEvent).offsetY,
+            label: row.label,
+            items: row.values.map((v, si) => ({
+              color: chartColors[si % chartColors.length],
+              name: seriesNames[si] ?? `Series ${si + 1}`,
+              value: v,
+            })),
+          });
+        });
+        hitArea.addEventListener("mouseleave", onHideTooltip);
+        svg.appendChild(hitArea);
       });
     });
 
     // Title
-    const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const titleEl = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
     titleEl.setAttribute("x", String(width / 2));
     titleEl.setAttribute("y", "30");
     titleEl.setAttribute("text-anchor", "middle");
@@ -113,7 +153,10 @@ function LineChart({
     svg.appendChild(titleEl);
 
     // X axis label
-    const xLabelEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const xLabelEl = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
     xLabelEl.setAttribute("x", String(width / 2));
     xLabelEl.setAttribute("y", String(height - 10));
     xLabelEl.setAttribute("text-anchor", "middle");
@@ -123,7 +166,10 @@ function LineChart({
     svg.appendChild(xLabelEl);
 
     // Y axis label
-    const yLabelEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const yLabelEl = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
     yLabelEl.setAttribute("transform", "rotate(-90)");
     yLabelEl.setAttribute("x", String(-(height / 2)));
     yLabelEl.setAttribute("y", "20");
@@ -146,7 +192,19 @@ function LineChart({
       fillStyle,
       roughness,
     });
-  }, [width, height, rows, seriesNames, title, xLabel, yLabel, roughness, fillStyle]);
+  }, [
+    width,
+    height,
+    rows,
+    seriesNames,
+    title,
+    xLabel,
+    yLabel,
+    roughness,
+    fillStyle,
+    onShowTooltip,
+    onHideTooltip,
+  ]);
 
   return <svg ref={svgRef} width={width} height={height} />;
 }

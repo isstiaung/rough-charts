@@ -18,8 +18,16 @@ export default function ChartEditor() {
 
   return (
     <div className="min-h-screen bg-base-200 p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_280px] gap-4 max-w-7xl mx-auto">
-        {/* Left sidebar */}
+      <header className="text-center mb-4 max-w-7xl mx-auto">
+        <h1 className="text-2xl font-bold">Hand Drawn Charts</h1>
+        <p className="text-sm text-base-content/60">
+          Create sketchy, hand-drawn style charts. Import CSV, edit data live,
+          and export.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr_300px] gap-4 max-w-7xl mx-auto">
+        {/* Left sidebar - controls */}
         <div className="flex flex-col gap-4 order-2 lg:order-1">
           <div className="card bg-base-100 shadow-sm p-4">
             <ChartTypeSelector />
@@ -32,18 +40,21 @@ export default function ChartEditor() {
           </div>
         </div>
 
-        {/* Center: chart */}
+        {/* Center - chart */}
         <div className="flex flex-col gap-2 order-1 lg:order-2">
           <TitleInput />
-          <div className="flex items-center gap-2">
-            <div className="w-20 shrink-0">
+          <div className="flex items-stretch gap-2">
+            <div className="flex items-center">
               <AxisLabelInput
                 value={yLabel}
                 onChange={setYLabel}
                 placeholder="Y Axis"
+                vertical
               />
             </div>
-            <ChartCanvas />
+            <div className="flex-1">
+              <ChartCanvas />
+            </div>
           </div>
           <AxisLabelInput
             value={xLabel}
@@ -52,12 +63,12 @@ export default function ChartEditor() {
           />
         </div>
 
-        {/* Right sidebar */}
+        {/* Right sidebar - data */}
         <div className="flex flex-col gap-4 order-3">
           <div className="card bg-base-100 shadow-sm p-4">
             <CsvImport />
           </div>
-          <div className="card bg-base-100 shadow-sm p-4">
+          <div className="card bg-base-100 shadow-sm p-4 overflow-hidden">
             <label className="text-sm font-bold mb-2 block">Chart Data</label>
             <DataTable />
           </div>

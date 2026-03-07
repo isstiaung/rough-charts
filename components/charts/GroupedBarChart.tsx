@@ -9,6 +9,7 @@ import { chartColors } from "./shared/colors";
 import { drawAxes } from "./shared/drawAxis";
 import { drawLegend } from "./shared/drawLegend";
 import type { DataRow, FillStyle } from "@/lib/types";
+import type { TooltipData } from "../ChartCanvas";
 
 interface Props {
   width: number;
@@ -20,6 +21,8 @@ interface Props {
   yLabel: string;
   roughness: number;
   fillStyle: FillStyle;
+  onShowTooltip: (data: TooltipData) => void;
+  onHideTooltip: () => void;
 }
 
 function GroupedBarChart({
@@ -32,37 +35,42 @@ function GroupedBarChart({
   yLabel,
   roughness,
   fillStyle,
+  onShowTooltip,
+  onHideTooltip,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg || rows.length === 0 || seriesNames.length === 0) return;
+    if (!svg || width <= 0 || rows.length === 0 || seriesNames.length === 0)
+      return;
 
-    // Clear previous content
     while (svg.firstChild) svg.removeChild(svg.firstChild);
 
     const rc = rough.svg(svg);
     const chartWidth = width - margin.left - margin.right;
     const chartHeight = height - margin.top - margin.bottom;
 
+    if (chartWidth <= 0 || chartHeight <= 0) return;
+
     const labels = rows.map((r) => r.label);
     const allValues = rows.flatMap((r) => r.values);
     const maxVal = max(allValues) ?? 0;
 
-    const xScale = scaleBand().domain(labels).range([0, chartWidth]).padding(0.3);
+    const xScale = scaleBand()
+      .domain(labels)
+      .range([0, chartWidth])
+      .padding(0.3);
     const xSub = scaleBand()
       .domain(seriesNames.map((_, i) => String(i)))
       .range([0, xScale.bandwidth()])
       .padding(0.05);
     const yScale = scaleLinear()
-      .domain([0, maxVal * 1.1])
+      .domain([0, maxVal > 0 ? maxVal * 1.15 : 10])
       .range([chartHeight, 0]);
 
-    // Generate y-axis ticks
     const yTicks = yScale.ticks(5);
 
-    // Draw axes
     drawAxes({
       rc,
       svg,
@@ -81,8 +89,7 @@ function GroupedBarChart({
       if (x0 === undefined) return;
 
       row.values.forEach((value, seriesIdx) => {
-        const barX =
-          margin.left + x0 + (xSub(String(seriesIdx)) ?? 0);
+        const barX = margin.left + x0 + (xSub(String(seriesIdx)) ?? 0);
         const barY = margin.top + yScale(value);
         const barWidth = xSub.bandwidth();
         const barHeight = chartHeight - yScale(value);
@@ -96,6 +103,32 @@ function GroupedBarChart({
             strokeWidth: 1.5,
           });
           svg.appendChild(rect);
+
+          // Invisible overlay for mouse events
+          const overlay = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "rect"
+          );
+          overlay.setAttribute("x", String(barX));
+          overlay.setAttribute("y", String(barY));
+          overlay.setAttribute("width", String(barWidth));
+          overlay.setAttribute("height", String(barHeight));
+          overlay.setAttribute("fill", "transparent");
+          overlay.setAttribute("cursor", "pointer");
+          overlay.addEventListener("mouseenter", (e) => {
+            onShowTooltip({
+              x: (e as MouseEvent).offsetX,
+              y: (e as MouseEvent).offsetY,
+              label: row.label,
+              items: row.values.map((v, si) => ({
+                color: chartColors[si % chartColors.length],
+                name: seriesNames[si] ?? `Series ${si + 1}`,
+                value: v,
+              })),
+            });
+          });
+          overlay.addEventListener("mouseleave", onHideTooltip);
+          svg.appendChild(overlay);
         }
       });
     });
@@ -132,7 +165,7 @@ function GroupedBarChart({
       "http://www.w3.org/2000/svg",
       "text"
     );
-    yLabelEl.setAttribute("transform", `rotate(-90)`);
+    yLabelEl.setAttribute("transform", "rotate(-90)");
     yLabelEl.setAttribute("x", String(-(height / 2)));
     yLabelEl.setAttribute("y", "20");
     yLabelEl.setAttribute("text-anchor", "middle");
@@ -154,7 +187,19 @@ function GroupedBarChart({
       fillStyle,
       roughness,
     });
-  }, [width, height, rows, seriesNames, title, xLabel, yLabel, roughness, fillStyle]);
+  }, [
+    width,
+    height,
+    rows,
+    seriesNames,
+    title,
+    xLabel,
+    yLabel,
+    roughness,
+    fillStyle,
+    onShowTooltip,
+    onHideTooltip,
+  ]);
 
   return <svg ref={svgRef} width={width} height={height} />;
 }

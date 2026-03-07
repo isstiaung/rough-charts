@@ -9,6 +9,7 @@ import { chartColors } from "./shared/colors";
 import { drawAxes } from "./shared/drawAxis";
 import { drawLegend } from "./shared/drawLegend";
 import type { DataRow, FillStyle } from "@/lib/types";
+import type { TooltipData } from "../ChartCanvas";
 
 interface Props {
   width: number;
@@ -20,6 +21,8 @@ interface Props {
   yLabel: string;
   roughness: number;
   fillStyle: FillStyle;
+  onShowTooltip: (data: TooltipData) => void;
+  onHideTooltip: () => void;
 }
 
 function StackedBarChart({
@@ -32,12 +35,15 @@ function StackedBarChart({
   yLabel,
   roughness,
   fillStyle,
+  onShowTooltip,
+  onHideTooltip,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg || rows.length === 0 || seriesNames.length === 0) return;
+    if (!svg || width <= 0 || rows.length === 0 || seriesNames.length === 0)
+      return;
 
     while (svg.firstChild) svg.removeChild(svg.firstChild);
 
@@ -45,15 +51,20 @@ function StackedBarChart({
     const chartWidth = width - margin.left - margin.right;
     const chartHeight = height - margin.top - margin.bottom;
 
+    if (chartWidth <= 0 || chartHeight <= 0) return;
+
     const labels = rows.map((r) => r.label);
     const stackTotals = rows.map((r) =>
       r.values.reduce((sum, v) => sum + v, 0)
     );
     const maxVal = max(stackTotals) ?? 0;
 
-    const xScale = scaleBand().domain(labels).range([0, chartWidth]).padding(0.3);
+    const xScale = scaleBand()
+      .domain(labels)
+      .range([0, chartWidth])
+      .padding(0.3);
     const yScale = scaleLinear()
-      .domain([0, maxVal * 1.1])
+      .domain([0, maxVal > 0 ? maxVal * 1.15 : 10])
       .range([chartHeight, 0]);
 
     const yTicks = yScale.ticks(5);
@@ -92,13 +103,42 @@ function StackedBarChart({
             strokeWidth: 1.5,
           });
           svg.appendChild(rect);
+
+          // Invisible overlay for mouse events
+          const overlay = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "rect"
+          );
+          overlay.setAttribute("x", String(barX));
+          overlay.setAttribute("y", String(barTop));
+          overlay.setAttribute("width", String(barWidth));
+          overlay.setAttribute("height", String(barHeight));
+          overlay.setAttribute("fill", "transparent");
+          overlay.setAttribute("cursor", "pointer");
+          overlay.addEventListener("mouseenter", (e) => {
+            onShowTooltip({
+              x: (e as MouseEvent).offsetX,
+              y: (e as MouseEvent).offsetY,
+              label: row.label,
+              items: row.values.map((v, si) => ({
+                color: chartColors[si % chartColors.length],
+                name: seriesNames[si] ?? `Series ${si + 1}`,
+                value: v,
+              })),
+            });
+          });
+          overlay.addEventListener("mouseleave", onHideTooltip);
+          svg.appendChild(overlay);
         }
         cumulative += value;
       });
     });
 
     // Title
-    const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const titleEl = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
     titleEl.setAttribute("x", String(width / 2));
     titleEl.setAttribute("y", "30");
     titleEl.setAttribute("text-anchor", "middle");
@@ -109,7 +149,10 @@ function StackedBarChart({
     svg.appendChild(titleEl);
 
     // X axis label
-    const xLabelEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const xLabelEl = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
     xLabelEl.setAttribute("x", String(width / 2));
     xLabelEl.setAttribute("y", String(height - 10));
     xLabelEl.setAttribute("text-anchor", "middle");
@@ -119,7 +162,10 @@ function StackedBarChart({
     svg.appendChild(xLabelEl);
 
     // Y axis label
-    const yLabelEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const yLabelEl = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
     yLabelEl.setAttribute("transform", "rotate(-90)");
     yLabelEl.setAttribute("x", String(-(height / 2)));
     yLabelEl.setAttribute("y", "20");
@@ -142,7 +188,19 @@ function StackedBarChart({
       fillStyle,
       roughness,
     });
-  }, [width, height, rows, seriesNames, title, xLabel, yLabel, roughness, fillStyle]);
+  }, [
+    width,
+    height,
+    rows,
+    seriesNames,
+    title,
+    xLabel,
+    yLabel,
+    roughness,
+    fillStyle,
+    onShowTooltip,
+    onHideTooltip,
+  ]);
 
   return <svg ref={svgRef} width={width} height={height} />;
 }

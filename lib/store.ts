@@ -98,7 +98,7 @@ export const useChartStore = create<ChartStore>()(
           seriesNames,
           rows: labels.map((label, i) => ({
             label,
-            values: data[i],
+            values: data[i] || [],
           })),
         }),
 
@@ -106,6 +106,7 @@ export const useChartStore = create<ChartStore>()(
     }),
     {
       name: "hand-drawn-charts-storage",
+      skipHydration: true,
     }
   )
 );
