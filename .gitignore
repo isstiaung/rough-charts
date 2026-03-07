@@ -25,6 +25,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# OpenNext
+/.open-next/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
