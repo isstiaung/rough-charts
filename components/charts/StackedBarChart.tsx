@@ -7,7 +7,7 @@ import { max } from "d3-array";
 import { margin, FONT_FAMILY } from "./shared/config";
 import { chartColors } from "./shared/colors";
 import { drawAxes } from "./shared/drawAxis";
-import { drawLegend } from "./shared/drawLegend";
+import { drawLegend, LEGEND_HEIGHT } from "./shared/drawLegend";
 import type { DataRow, FillStyle } from "@/lib/types";
 import type { TooltipData } from "../ChartCanvas";
 
@@ -183,8 +183,8 @@ function StackedBarChart({
         color: chartColors[i % chartColors.length],
         label: name,
       })),
-      x: margin.left + chartWidth - 120,
-      y: margin.top + 5,
+      x: width / 2,
+      y: height + 5,
       fillStyle,
       roughness,
     });
@@ -202,7 +202,7 @@ function StackedBarChart({
     onHideTooltip,
   ]);
 
-  return <svg ref={svgRef} width={width} height={height} />;
+  return <svg ref={svgRef} width={width} height={height + LEGEND_HEIGHT} />;
 }
 
 export default memo(StackedBarChart);
