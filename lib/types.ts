@@ -26,6 +26,15 @@ export interface ChartOptions {
   roughness: number;
   fillStyle: FillStyle;
   chartType: ChartType;
+  /** roughjs seed so strokes stay stable across re-renders */
+  seed: number;
+}
+
+export interface TooltipData {
+  x: number;
+  y: number;
+  label: string;
+  items: { color: string; name: string; value: number }[];
 }
 
 export interface ChartStore extends ChartData, ChartOptions {
@@ -35,6 +44,7 @@ export interface ChartStore extends ChartData, ChartOptions {
   setChartType: (chartType: ChartType) => void;
   setRoughness: (roughness: number) => void;
   setFillStyle: (fillStyle: FillStyle) => void;
+  regenerateSeed: () => void;
   setSeriesName: (index: number, name: string) => void;
   setRowLabel: (rowIndex: number, label: string) => void;
   setCellValue: (rowIndex: number, colIndex: number, value: number) => void;

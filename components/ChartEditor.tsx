@@ -19,7 +19,11 @@ export default function ChartEditor() {
   return (
     <div className="min-h-screen bg-base-200 p-4">
       <header className="text-center mb-4 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold">Hand Drawn Charts</h1>
+        <div className="flex items-center justify-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="" className="w-9 h-9" />
+          <h1 className="text-2xl font-bold">Hand Drawn Charts</h1>
+        </div>
         <p className="text-sm text-base-content/60">
           Create sketchy, hand-drawn style charts. Import CSV, edit data live,
           and export.

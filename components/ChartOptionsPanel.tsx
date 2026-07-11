@@ -10,6 +10,7 @@ const fillStyles: { value: FillStyle; label: string }[] = [
   { value: "cross-hatch", label: "Cross Hatch" },
   { value: "dots", label: "Dots" },
   { value: "dashed", label: "Dashed" },
+  { value: "zigzag-line", label: "Zigzag Line" },
 ];
 
 export default function ChartOptionsPanel() {
@@ -17,6 +18,7 @@ export default function ChartOptionsPanel() {
   const fillStyle = useChartStore((s) => s.fillStyle);
   const setRoughness = useChartStore((s) => s.setRoughness);
   const setFillStyle = useChartStore((s) => s.setFillStyle);
+  const regenerateSeed = useChartStore((s) => s.regenerateSeed);
   const resetToDefaults = useChartStore((s) => s.resetToDefaults);
 
   return (
@@ -50,6 +52,14 @@ export default function ChartOptionsPanel() {
           ))}
         </select>
       </div>
+
+      <button
+        onClick={regenerateSeed}
+        className="btn btn-sm btn-outline"
+        title="Redraw the sketch strokes with new randomness"
+      >
+        🎲 Re-roll Sketch
+      </button>
 
       <button
         onClick={resetToDefaults}

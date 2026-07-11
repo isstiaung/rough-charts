@@ -3,16 +3,8 @@
 import { useRef, useState, useCallback } from "react";
 import { useChartStore } from "@/lib/store";
 import { useChartDimensions } from "./charts/shared/useChartDimensions";
-import GroupedBarChart from "./charts/GroupedBarChart";
-import StackedBarChart from "./charts/StackedBarChart";
-import LineChart from "./charts/LineChart";
-
-export interface TooltipData {
-  x: number;
-  y: number;
-  label: string;
-  items: { color: string; name: string; value: number }[];
-}
+import RoughChart from "./charts/RoughChart";
+import type { TooltipData } from "@/lib/types";
 
 export default function ChartCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -27,23 +19,10 @@ export default function ChartCanvas() {
   const yLabel = useChartStore((s) => s.yLabel);
   const roughness = useChartStore((s) => s.roughness);
   const fillStyle = useChartStore((s) => s.fillStyle);
+  const seed = useChartStore((s) => s.seed);
 
   const showTooltip = useCallback((data: TooltipData) => setTooltip(data), []);
   const hideTooltip = useCallback(() => setTooltip(null), []);
-
-  const chartProps = {
-    width,
-    height,
-    rows,
-    seriesNames,
-    title,
-    xLabel,
-    yLabel,
-    roughness,
-    fillStyle,
-    onShowTooltip: showTooltip,
-    onHideTooltip: hideTooltip,
-  };
 
   return (
     <div
@@ -53,19 +32,29 @@ export default function ChartCanvas() {
       style={{ minHeight: 300 }}
     >
       {width > 0 && (
-        <>
-          {chartType === "grouped-bar" && <GroupedBarChart {...chartProps} />}
-          {chartType === "stacked-bar" && <StackedBarChart {...chartProps} />}
-          {chartType === "line" && <LineChart {...chartProps} />}
-        </>
+        <RoughChart
+          chartType={chartType}
+          width={width}
+          height={height}
+          rows={rows}
+          seriesNames={seriesNames}
+          title={title}
+          xLabel={xLabel}
+          yLabel={yLabel}
+          roughness={roughness}
+          fillStyle={fillStyle}
+          seed={seed}
+          onShowTooltip={showTooltip}
+          onHideTooltip={hideTooltip}
+        />
       )}
 
       {tooltip && (
         <div
           className="absolute pointer-events-none bg-white border-2 border-black rounded-lg px-3 py-2 shadow-lg z-10"
           style={{
-            left: Math.min(tooltip.x + 10, width - 160),
-            top: tooltip.y - 10,
+            left: Math.max(Math.min(tooltip.x + 10, width - 160), 0),
+            top: Math.max(tooltip.y - 10, 0),
             fontFamily: "xkcd, cursive",
           }}
         >

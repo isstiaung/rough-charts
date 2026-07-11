@@ -9,3 +9,7 @@ export const chartColors = [
   "#f19839",
   "#949494",
 ];
+
+export function seriesColor(index: number): string {
+  return chartColors[index % chartColors.length];
+}

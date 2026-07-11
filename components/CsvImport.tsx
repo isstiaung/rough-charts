@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useRef } from "react";
-import { parseCsv } from "@/lib/csv";
+import { parseCsvFile } from "@/lib/csv";
 import { useChartStore } from "@/lib/store";
 
 export default function CsvImport() {
@@ -14,7 +14,7 @@ export default function CsvImport() {
     async (file: File) => {
       setError(null);
       try {
-        const { labels, seriesNames, data } = await parseCsv(file);
+        const { labels, seriesNames, data } = await parseCsvFile(file);
         importCsvData(labels, seriesNames, data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to parse CSV");

@@ -1,101 +1,156 @@
 import type { RoughSVG } from "roughjs/bin/svg";
 import { margin, FONT_FAMILY } from "./config";
+import { svgText } from "./svg";
+
+export interface XTick {
+  /** Absolute x position (margin included) of the tick center */
+  x: number;
+  label: string;
+}
 
 interface AxisOptions {
   rc: RoughSVG;
   svg: SVGSVGElement;
-  width: number;
-  height: number;
-  xScale: (label: string) => number | undefined;
+  chartWidth: number;
+  chartHeight: number;
+  xTicks: XTick[];
+  /** Chart-relative y position for a data value */
   yScale: (value: number) => number;
-  xLabels: string[];
   yTicks: number[];
-  xBandwidth?: number;
+  /** Absolute y of the zero line; drawn when the domain crosses zero */
+  zeroY?: number;
+  /** Slant the x labels (decided up front so the chart can reserve space) */
+  rotateLabels: boolean;
+}
+
+const MAX_LABEL_CHARS = 16;
+const AVG_CHAR_WIDTH = 7.7; // rough estimate for the 14px xkcd font
+
+export interface XLabelLayout {
+  rotate: boolean;
+  /** Extra bottom space rotated labels need so they clear the axis title */
+  extraHeight: number;
+}
+
+/**
+ * Decides whether x labels must rotate to avoid overlapping, and how much
+ * extra vertical space the rotated labels will occupy. Shared by the chart
+ * (to shrink the plot area) and drawAxes (to actually rotate).
+ */
+export function xLabelLayout(
+  labels: string[],
+  chartWidth: number
+): XLabelLayout {
+  const maxChars = Math.min(
+    labels.reduce((longest, l) => Math.max(longest, l.length), 0),
+    MAX_LABEL_CHARS
+  );
+  const estWidth = maxChars * AVG_CHAR_WIDTH;
+  const slotWidth = chartWidth / Math.max(labels.length, 1);
+  const rotate = estWidth > slotWidth - 8;
+  // Labels rotate -30deg, so they drop below the anchor by ~sin(30) * width
+  return { rotate, extraHeight: rotate ? Math.round(estWidth * 0.5) + 12 : 0 };
 }
 
 export function drawAxes({
   rc,
   svg,
-  width,
-  height,
-  xScale,
+  chartWidth,
+  chartHeight,
+  xTicks,
   yScale,
-  xLabels,
   yTicks,
-  xBandwidth,
+  zeroY,
+  rotateLabels,
 }: AxisOptions) {
-  const chartWidth = width - margin.left - margin.right;
-  const chartHeight = height - margin.top - margin.bottom;
+  const bottom = margin.top + chartHeight;
 
-  // Draw X axis line
-  const xAxisLine = rc.line(
-    margin.left,
-    margin.top + chartHeight,
-    margin.left + chartWidth,
-    margin.top + chartHeight,
-    { roughness: 0.8, stroke: "black", strokeWidth: 1.5 }
+  // X axis line
+  svg.appendChild(
+    rc.line(margin.left, bottom, margin.left + chartWidth, bottom, {
+      roughness: 0.8,
+      stroke: "black",
+      strokeWidth: 1.5,
+    })
   );
-  svg.appendChild(xAxisLine);
 
-  // Draw Y axis line
-  const yAxisLine = rc.line(
-    margin.left,
-    margin.top,
-    margin.left,
-    margin.top + chartHeight,
-    { roughness: 0.8, stroke: "black", strokeWidth: 1.5 }
+  // Y axis line
+  svg.appendChild(
+    rc.line(margin.left, margin.top, margin.left, bottom, {
+      roughness: 0.8,
+      stroke: "black",
+      strokeWidth: 1.5,
+    })
   );
-  svg.appendChild(yAxisLine);
 
-  // X axis labels
-  xLabels.forEach((label) => {
-    const x = xScale(label);
-    if (x === undefined) return;
-    const centerX = margin.left + x + (xBandwidth ?? 0) / 2;
+  // Zero line when the data dips below zero
+  if (zeroY !== undefined && Math.abs(zeroY - bottom) > 1) {
+    svg.appendChild(
+      rc.line(margin.left, zeroY, margin.left + chartWidth, zeroY, {
+        roughness: 0.8,
+        stroke: "#555",
+        strokeWidth: 1,
+      })
+    );
+  }
 
-    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", String(centerX));
-    text.setAttribute("y", String(margin.top + chartHeight + 25));
-    text.setAttribute("text-anchor", "middle");
-    text.setAttribute("font-family", FONT_FAMILY);
-    text.setAttribute("font-size", "14");
-    text.setAttribute("fill", "black");
-    text.textContent = label;
+  // X axis ticks and labels
+  xTicks.forEach(({ x, label }) => {
+    const display =
+      label.length > MAX_LABEL_CHARS
+        ? `${label.slice(0, MAX_LABEL_CHARS - 1)}…`
+        : label;
+
+    const labelY = bottom + (rotateLabels ? 20 : 25);
+    const text = svgText(
+      {
+        x,
+        y: labelY,
+        "text-anchor": rotateLabels ? "end" : "middle",
+        "font-family": FONT_FAMILY,
+        "font-size": 14,
+        fill: "black",
+        ...(rotateLabels
+          ? { transform: `rotate(-30 ${x} ${labelY})` }
+          : {}),
+      },
+      display
+    );
     svg.appendChild(text);
 
-    // Small tick
-    const tick = rc.line(
-      centerX,
-      margin.top + chartHeight,
-      centerX,
-      margin.top + chartHeight + 5,
-      { roughness: 0.5, stroke: "black", strokeWidth: 1 }
+    svg.appendChild(
+      rc.line(x, bottom, x, bottom + 5, {
+        roughness: 0.5,
+        stroke: "black",
+        strokeWidth: 1,
+      })
     );
-    svg.appendChild(tick);
   });
 
-  // Y axis ticks and labels
+  // Y axis ticks, labels, and grid lines
   yTicks.forEach((tickVal) => {
     const y = margin.top + yScale(tickVal);
 
-    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", String(margin.left - 10));
-    text.setAttribute("y", String(y + 4));
-    text.setAttribute("text-anchor", "end");
-    text.setAttribute("font-family", FONT_FAMILY);
-    text.setAttribute("font-size", "14");
-    text.setAttribute("fill", "black");
-    text.textContent = String(tickVal);
-    svg.appendChild(text);
-
-    // Grid line
-    const gridLine = rc.line(
-      margin.left,
-      y,
-      margin.left + chartWidth,
-      y,
-      { roughness: 0.5, stroke: "#ddd", strokeWidth: 0.5 }
+    svg.appendChild(
+      svgText(
+        {
+          x: margin.left - 10,
+          y: y + 4,
+          "text-anchor": "end",
+          "font-family": FONT_FAMILY,
+          "font-size": 14,
+          fill: "black",
+        },
+        String(tickVal)
+      )
     );
-    svg.appendChild(gridLine);
+
+    svg.appendChild(
+      rc.line(margin.left, y, margin.left + chartWidth, y, {
+        roughness: 0.5,
+        stroke: "#ddd",
+        strokeWidth: 0.5,
+      })
+    );
   });
 }

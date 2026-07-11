@@ -16,7 +16,12 @@ const defaultState = {
   chartType: "grouped-bar" as ChartType,
   roughness: 1.5,
   fillStyle: "hachure" as FillStyle,
+  seed: 42,
 };
+
+function randomSeed() {
+  return Math.floor(Math.random() * 2 ** 31) + 1;
+}
 
 export const useChartStore = create<ChartStore>()(
   persist(
@@ -29,6 +34,7 @@ export const useChartStore = create<ChartStore>()(
       setChartType: (chartType) => set({ chartType }),
       setRoughness: (roughness) => set({ roughness }),
       setFillStyle: (fillStyle) => set({ fillStyle }),
+      regenerateSeed: () => set({ seed: randomSeed() }),
 
       setSeriesName: (index, name) =>
         set((state) => {

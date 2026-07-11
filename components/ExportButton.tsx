@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { exportChart, type ExportFormat } from "@/lib/export";
+import { useChartStore } from "@/lib/store";
 
 const formats: { value: ExportFormat; label: string }[] = [
   { value: "png", label: "PNG" },
@@ -10,14 +11,26 @@ const formats: { value: ExportFormat; label: string }[] = [
 ];
 
 export default function ExportButton() {
+  const title = useChartStore((s) => s.title);
   const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setError(null), 5000);
+    return () => clearTimeout(timer);
+  }, [error]);
 
   const handleExport = async (format: ExportFormat) => {
+    // Close the daisyUI focus-based dropdown
+    (document.activeElement as HTMLElement | null)?.blur();
     setExporting(true);
+    setError(null);
     try {
-      await exportChart(format);
+      await exportChart(format, title);
     } catch (err) {
       console.error("Export failed:", err);
+      setError("Export failed. Please try again.");
     } finally {
       setExporting(false);
     }
@@ -38,10 +51,20 @@ export default function ExportButton() {
       >
         {formats.map((f) => (
           <li key={f.value}>
-            <a onClick={() => handleExport(f.value)}>{f.label}</a>
+            <button type="button" onClick={() => handleExport(f.value)}>
+              {f.label}
+            </button>
           </li>
         ))}
       </ul>
+
+      {error && (
+        <div className="toast toast-end z-50">
+          <div role="alert" className="alert alert-error text-sm">
+            {error}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
