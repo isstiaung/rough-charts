@@ -29,7 +29,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Scripts
 
 - `npm run dev` - Start development server
-- `npm run build` - Production build
+- `npm run build` - Production build (Next.js + OpenNext worker bundle; used by Workers Builds)
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 - `npm run typecheck` - TypeScript type check
