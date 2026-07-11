@@ -1,9 +1,38 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const description =
+  "Create sketchy, hand-drawn style charts in the browser. Import CSV, edit live, and export as PNG, SVG, or JPEG.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://example.com"),
   title: "Hand Drawn Charts",
-  description: "Create beautiful hand-drawn style charts",
+  description,
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "Hand Drawn Charts",
+    description,
+    url: "/",
+    siteName: "Hand Drawn Charts",
+    type: "website",
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hand Drawn Charts",
+    description,
+    images: ["/og.png"],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#fdf8ee",
 };
 
 export default function RootLayout({
