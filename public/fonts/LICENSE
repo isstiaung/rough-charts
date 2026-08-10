@@ -1,0 +1,31 @@
+xkcd Script
+===========
+
+The font file in this directory (`xkcd-script.woff2`) is third-party content.
+It is NOT covered by the MIT License that applies to the rest of this
+repository (see ../../LICENSE).
+
+License
+-------
+
+Creative Commons Attribution-NonCommercial 3.0 Unported (CC BY-NC 3.0)
+https://creativecommons.org/licenses/by-nc/3.0/
+
+Attribution
+-----------
+
+"xkcd Script" is derived from the handwriting of Randall Munroe (https://xkcd.com)
+and is distributed by the IPython project at https://github.com/ipython/xkcd-font.
+
+Terms in brief
+--------------
+
+You are free to share and adapt this font, provided you give appropriate
+credit, for NON-COMMERCIAL purposes only. Commercial use is not permitted
+under this license.
+
+If you fork this project for commercial use, remove this font and substitute a
+permissively licensed hand-drawn typeface (Comic Neue, Patrick Hand, and
+Shantell Sans are all available under the SIL Open Font License). The font is
+referenced from `app/globals.css` (`@font-face`) and
+`components/charts/shared/config.ts` (`FONT_FAMILY`).

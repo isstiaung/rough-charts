@@ -2,9 +2,8 @@
 
 Create sketchy, hand-drawn style charts in the browser. Import CSV data, edit live, and export as PNG/SVG/JPEG.
 
-Live at [example.com](https://example.com).
-
-Built with Next.js 15, roughjs, D3, Tailwind 4, and daisyUI 5.
+Built with Next.js 15, roughjs, D3, Tailwind 4, and daisyUI 5. Everything runs
+client-side — there is no backend, and your data never leaves the browser.
 
 ## Features
 
@@ -29,7 +28,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Scripts
 
 - `npm run dev` - Start development server
-- `npm run build` - Production build (Next.js + OpenNext worker bundle; used by Workers Builds)
+- `npm run build` - Production build (Next.js + OpenNext worker bundle)
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 - `npm run typecheck` - TypeScript type check
@@ -37,13 +36,32 @@ Open [http://localhost:3000](http://localhost:3000).
 - `npm run generate-icons` - Regenerate logo/favicon/OG assets from `scripts/generate-icons.mjs`
 - `npm run preview` - Build and preview the Cloudflare Worker locally
 
+## Configuration
+
+Copy `.env.example` to `.env` and adjust as needed. There is one variable:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | No | Absolute base URL of the deployed site, used to resolve Open Graph / Twitter card image URLs. Defaults to `http://localhost:3000`. |
+
+`NEXT_PUBLIC_*` values are inlined at build time, so this must be set in the
+build environment — not as a runtime worker variable.
+
 ## Deployment
 
-Deployed to Cloudflare Workers (worker: `rough-charts`) via
-[@opennextjs/cloudflare](https://opennext.js.org/cloudflare) and Workers Builds
-(git integration), served at [example.com](https://example.com).
-Pushing to the `deploy-worker` branch triggers a production build and deploy;
-`main` is for development. Worker config lives in `wrangler.jsonc`.
+The app deploys to Cloudflare Workers via
+[@opennextjs/cloudflare](https://opennext.js.org/cloudflare). Worker config
+lives in `wrangler.jsonc` — change `name` to your own worker name.
+
+```bash
+npx wrangler deploy
+```
+
+Or connect the repo to Cloudflare Workers Builds and set
+`NEXT_PUBLIC_SITE_URL` as a build variable.
+
+It is a standard Next.js app otherwise, so Vercel, Netlify, or a self-hosted
+`next start` all work without changes.
 
 ## Tech Stack
 
@@ -53,7 +71,7 @@ Pushing to the `deploy-worker` branch triggers a production build and deploy;
 - **State**: Zustand with LocalStorage persistence
 - **CSV**: papaparse
 - **Export**: native SVG serialization with embedded font; canvas rasterization for PNG/JPEG
-- **Font**: XKCD Script (hand-drawn style)
+- **Font**: xkcd Script (hand-drawn style)
 - **Tests**: Vitest
 
 ## Architecture
@@ -63,3 +81,18 @@ All three chart types render through a single `RoughChart` component
 chrome, and legend. Each chart type contributes only its mark-drawing logic in
 `components/charts/renderers/`. Shared pure math (domains, stacking) lives in
 `components/charts/shared/scales.ts` and is unit tested.
+
+## License
+
+The source code is MIT licensed — see [LICENSE](LICENSE).
+
+**The bundled font is not.** `public/fonts/xkcd-script.woff2` is
+["xkcd Script"](https://github.com/ipython/xkcd-font), licensed
+[CC BY-NC 3.0](https://creativecommons.org/licenses/by-nc/3.0/) and based on the
+handwriting of [Randall Munroe](https://xkcd.com). It may be used
+non-commercially, with attribution. Chart exports embed the font, so exported
+files carry those terms too.
+
+If you want to use this project commercially, swap the font for a permissively
+licensed hand-drawn typeface — Comic Neue, Patrick Hand, and Shantell Sans are
+all under the SIL Open Font License. See [NOTICE](NOTICE) for details.

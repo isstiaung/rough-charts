@@ -1,0 +1,42 @@
+Hand Drawn Charts
+Copyright (c) 2026 Sainath Rajagopal
+
+The source code in this repository is licensed under the MIT License; see
+LICENSE for the full text.
+
+================================================================================
+BUNDLED ASSET NOT COVERED BY THE MIT LICENSE
+================================================================================
+
+public/fonts/xkcd-script.woff2 — "xkcd Script"
+
+  This font is NOT covered by the MIT License above. It is licensed under the
+  Creative Commons Attribution-NonCommercial 3.0 License.
+
+    Source:  https://github.com/ipython/xkcd-font
+    License: https://creativecommons.org/licenses/by-nc/3.0/
+    Based on the handwriting of Randall Munroe (https://xkcd.com).
+
+  What this means for you:
+
+  - Non-commercial use of this font is permitted, with attribution.
+  - Commercial use of this font is NOT permitted by its license. If you intend
+    to use this project commercially, replace the font with a permissively
+    licensed alternative (for example Comic Neue, Patrick Hand, or Shantell
+    Sans — all SIL Open Font License) and update the `@font-face` rule in
+    app/globals.css and FONT_FAMILY in components/charts/shared/config.ts.
+
+  Note: chart exports embed this font. The SVG export inlines it as a base64
+  data URI (see lib/export.ts), so exported files carry the font and its
+  license terms with them.
+
+  See public/fonts/LICENSE for the full attribution notice.
+
+================================================================================
+THIRD-PARTY DEPENDENCIES
+================================================================================
+
+This project depends on open source packages distributed under permissive
+licenses (MIT and ISC), including roughjs, d3-scale, d3-array, papaparse,
+zustand, next, react, react-dom, tailwindcss, and daisyui. Their license texts
+ship with the packages in node_modules.

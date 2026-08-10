@@ -18,11 +18,16 @@
 /build
 
 # claude
-.claude/settings.local.json
+/.claude/
+
+# local dev notes (not part of the published project)
+/plan.md
+/progress.txt
 
 # misc
 .DS_Store
 *.pem
+.env
 .env.local
 .env.development.local
 .env.test.local

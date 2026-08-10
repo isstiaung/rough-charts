@@ -4,8 +4,12 @@ import "./globals.css";
 const description =
   "Create sketchy, hand-drawn style charts in the browser. Import CSV, edit live, and export as PNG, SVG, or JPEG.";
 
+// Only used to turn the OG/Twitter image paths into absolute URLs. Set
+// NEXT_PUBLIC_SITE_URL in the build environment when deploying; see .env.example.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://example.com"),
+  metadataBase: new URL(siteUrl),
   title: "Hand Drawn Charts",
   description,
   icons: {
