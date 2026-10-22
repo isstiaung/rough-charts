@@ -1,5 +1,8 @@
 import type { MetadataRoute } from "next";
 
+// Required to emit the manifest as a file under `output: "export"`
+export const dynamic = "force-static";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Hand Drawn Charts",
