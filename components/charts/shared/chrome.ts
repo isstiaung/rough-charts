@@ -2,7 +2,7 @@ import { FONT_FAMILY } from "./config";
 import { svgText } from "./svg";
 
 interface ChromeOptions {
-  svg: SVGSVGElement;
+  root: SVGElement;
   width: number;
   height: number;
   title: string;
@@ -12,14 +12,14 @@ interface ChromeOptions {
 
 /** Draws the title and axis label text shared by every chart type. */
 export function drawChartChrome({
-  svg,
+  root,
   width,
   height,
   title,
   xLabel,
   yLabel,
 }: ChromeOptions) {
-  svg.appendChild(
+  root.appendChild(
     svgText(
       {
         x: width / 2,
@@ -33,7 +33,7 @@ export function drawChartChrome({
     )
   );
 
-  svg.appendChild(
+  root.appendChild(
     svgText(
       {
         x: width / 2,
@@ -46,7 +46,7 @@ export function drawChartChrome({
     )
   );
 
-  svg.appendChild(
+  root.appendChild(
     svgText(
       {
         transform: "rotate(-90)",

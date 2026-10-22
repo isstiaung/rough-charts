@@ -1,11 +1,11 @@
-import type { RoughSVG } from "roughjs/bin/svg";
 import { FONT_FAMILY } from "./config";
-import { svgNode, svgText, measureTextWidth } from "./svg";
+import type { Sketch } from "./sketch";
+import { svgNode, svgText, measureTextWidths } from "./svg";
 import type { FillStyle } from "@/lib/types";
 
 interface LegendOptions {
-  rc: RoughSVG;
-  svg: SVGSVGElement;
+  sketch: Sketch;
+  root: SVGElement;
   items: { color: string; label: string }[];
   /** Center X position of the legend */
   x: number;
@@ -28,8 +28,8 @@ const FONT_SIZE = 13;
 
 /** Draws the legend (wrapping items into rows) and returns its total height. */
 export function drawLegend({
-  rc,
-  svg,
+  sketch,
+  root,
   items,
   x,
   y,
@@ -41,17 +41,12 @@ export function drawLegend({
 
   const g = svgNode("g");
 
-  // Measure label widths using a temporary rendered text node
-  const tempText = svgNode("text", {
-    "font-family": FONT_FAMILY,
-    "font-size": FONT_SIZE,
-  });
-  svg.appendChild(tempText);
-  const itemWidths = items.map((item) => {
-    tempText.textContent = item.label;
-    return BOX_SIZE + 6 + measureTextWidth(tempText, FONT_SIZE);
-  });
-  svg.removeChild(tempText);
+  const itemWidths = measureTextWidths(
+    root,
+    items.map((item) => item.label),
+    FONT_FAMILY,
+    FONT_SIZE
+  ).map((width) => BOX_SIZE + 6 + width);
 
   // Greedy wrap into rows
   const maxRowWidth = Math.max(maxWidth - PADDING * 2, BOX_SIZE * 4);
@@ -77,7 +72,7 @@ export function drawLegend({
   const left = x - bgWidth / 2;
   g.setAttribute("transform", `translate(${left}, ${y})`);
 
-  const bg = rc.rectangle(0, 0, bgWidth, bgHeight, {
+  const bg = sketch.rectangle("legend", 0, 0, bgWidth, bgHeight, {
     fill: "white",
     fillStyle: "solid",
     stroke: "black",
@@ -95,13 +90,20 @@ export function drawLegend({
     rowItems.forEach((itemIdx) => {
       const item = items[itemIdx];
 
-      const swatch = rc.rectangle(currentX, rowY, BOX_SIZE, BOX_SIZE, {
-        fill: item.color,
-        fillStyle,
-        stroke: item.color,
-        strokeWidth: 1,
-        roughness: roughness * 0.5,
-      });
+      const swatch = sketch.rectangle(
+        `legend-swatch-${itemIdx}`,
+        currentX,
+        rowY,
+        BOX_SIZE,
+        BOX_SIZE,
+        {
+          fill: item.color,
+          fillStyle,
+          stroke: item.color,
+          strokeWidth: 1,
+          roughness: roughness * 0.5,
+        }
+      );
       g.appendChild(swatch);
 
       g.appendChild(
@@ -121,6 +123,6 @@ export function drawLegend({
     });
   });
 
-  svg.appendChild(g);
+  root.appendChild(g);
   return bgHeight;
 }

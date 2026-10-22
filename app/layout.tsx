@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { preload } from "react-dom";
 import "./globals.css";
 
 const description =
@@ -44,6 +45,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // The chart measures text to lay itself out, so fetch its font up front
+  preload("/fonts/xkcd-script.woff2", {
+    as: "font",
+    type: "font/woff2",
+    crossOrigin: "anonymous",
+  });
+
   return (
     <html lang="en" data-theme="light">
       <body>{children}</body>

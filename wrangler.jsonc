@@ -1,14 +1,10 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "rough-charts",
-  "main": ".open-next/worker.js",
   "compatibility_date": "2025-09-27",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": {
-    "enabled": true
-  },
+  // Static assets only: `npm run build` writes the site to out/
   "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "directory": "./out",
+    "not_found_handling": "404-page"
   }
 }

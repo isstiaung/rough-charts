@@ -1,73 +1,59 @@
-import { scaleBand, scaleLinear } from "d3-scale";
-import { margin } from "../shared/config";
+import { scaleBand } from "d3-scale";
 import { seriesColor } from "../shared/colors";
 import { drawAxes } from "../shared/drawAxis";
-import { paddedDomain } from "../shared/scales";
-import { svgNode } from "../shared/svg";
-import { addTooltipOverlay, type RenderContext } from "./types";
+import type { ChartRenderer } from "./types";
 
-export function renderGroupedBar(ctx: RenderContext) {
-  const { rc, svg, chartWidth, chartHeight, rows, seriesNames } = ctx;
+export const groupedBar: ChartRenderer = {
+  yValues: (rows) => rows.flatMap((r) => r.values),
+  zeroBaseline: true,
 
-  // Index-based domain so duplicate row labels each get their own band
-  const indices = rows.map((_, i) => String(i));
-  const xScale = scaleBand().domain(indices).range([0, chartWidth]).padding(0.3);
-  const xSub = scaleBand()
-    .domain(seriesNames.map((_, i) => String(i)))
-    .range([0, xScale.bandwidth()])
-    .padding(0.05);
+  draw(ctx) {
+    const { sketch, root, plot, rows, seriesNames, yScale } = ctx;
 
-  const domain = paddedDomain(rows.flatMap((r) => r.values));
-  const yScale = scaleLinear().domain(domain).range([chartHeight, 0]);
-  const y0 = yScale(0);
+    // Index-based domain so duplicate row labels each get their own band
+    const indices = rows.map((_, i) => String(i));
+    const xScale = scaleBand()
+      .domain(indices)
+      .range([plot.left, plot.left + plot.width])
+      .padding(0.3);
+    const xSub = scaleBand()
+      .domain(seriesNames.map((_, i) => String(i)))
+      .range([0, xScale.bandwidth()])
+      .padding(0.05);
 
-  drawAxes({
-    rc,
-    svg,
-    chartWidth,
-    chartHeight,
-    xTicks: rows.map((row, i) => ({
-      x: margin.left + (xScale(String(i)) ?? 0) + xScale.bandwidth() / 2,
-      label: row.label,
-    })),
-    yScale: (v) => yScale(v),
-    yTicks: yScale.ticks(5),
-    zeroY: domain[0] < 0 ? margin.top + y0 : undefined,
-    rotateLabels: ctx.rotateXLabels,
-  });
+    const xCenters = indices.map(
+      (i) => (xScale(i) ?? 0) + xScale.bandwidth() / 2
+    );
+    drawAxes(ctx, xCenters);
 
-  rows.forEach((row, rowIdx) => {
-    const x0 = xScale(String(rowIdx));
-    if (x0 === undefined) return;
+    const y0 = yScale(0);
+    rows.forEach((row, rowIdx) => {
+      const x0 = xScale(String(rowIdx));
+      if (x0 === undefined) return;
 
-    row.values.forEach((value, seriesIdx) => {
-      const barX = margin.left + x0 + (xSub(String(seriesIdx)) ?? 0);
-      const barY = margin.top + Math.min(yScale(value), y0);
-      const barWidth = xSub.bandwidth();
-      const barHeight = Math.abs(yScale(value) - y0);
+      row.values.forEach((value, seriesIdx) => {
+        const barHeight = Math.abs(yScale(value) - y0);
+        if (barHeight <= 0) return;
 
-      if (barHeight > 0) {
-        svg.appendChild(
-          rc.rectangle(barX, barY, barWidth, barHeight, {
-            fill: seriesColor(seriesIdx),
-            fillStyle: ctx.fillStyle,
-            roughness: ctx.roughness,
-            stroke: "black",
-            strokeWidth: 1.5,
-          })
+        root.appendChild(
+          sketch.rectangle(
+            `bar-${rowIdx}-${seriesIdx}`,
+            x0 + (xSub(String(seriesIdx)) ?? 0),
+            Math.min(yScale(value), y0),
+            xSub.bandwidth(),
+            barHeight,
+            {
+              fill: seriesColor(seriesIdx),
+              fillStyle: ctx.fillStyle,
+              roughness: ctx.roughness,
+              stroke: "black",
+              strokeWidth: 1.5,
+            }
+          )
         );
-
-        addTooltipOverlay(
-          ctx,
-          svgNode("rect", {
-            x: barX,
-            y: barY,
-            width: barWidth,
-            height: barHeight,
-          }),
-          row
-        );
-      }
+      });
     });
-  });
-}
+
+    return xCenters;
+  },
+};

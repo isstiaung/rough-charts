@@ -1,27 +1,6 @@
-import type { RoughSVG } from "roughjs/bin/svg";
-import { margin, FONT_FAMILY } from "./config";
+import { FONT_FAMILY, TICK_FONT_SIZE, Y_TICK_GAP } from "./config";
 import { svgText } from "./svg";
-
-export interface XTick {
-  /** Absolute x position (margin included) of the tick center */
-  x: number;
-  label: string;
-}
-
-interface AxisOptions {
-  rc: RoughSVG;
-  svg: SVGSVGElement;
-  chartWidth: number;
-  chartHeight: number;
-  xTicks: XTick[];
-  /** Chart-relative y position for a data value */
-  yScale: (value: number) => number;
-  yTicks: number[];
-  /** Absolute y of the zero line; drawn when the domain crosses zero */
-  zeroY?: number;
-  /** Slant the x labels (decided up front so the chart can reserve space) */
-  rotateLabels: boolean;
-}
+import type { RenderContext } from "../renderers/types";
 
 const MAX_LABEL_CHARS = 16;
 const AVG_CHAR_WIDTH = 7.7; // rough estimate for the 14px xkcd font
@@ -52,22 +31,15 @@ export function xLabelLayout(
   return { rotate, extraHeight: rotate ? Math.round(estWidth * 0.5) + 12 : 0 };
 }
 
-export function drawAxes({
-  rc,
-  svg,
-  chartWidth,
-  chartHeight,
-  xTicks,
-  yScale,
-  yTicks,
-  zeroY,
-  rotateLabels,
-}: AxisOptions) {
-  const bottom = margin.top + chartHeight;
+/** Draws both axes, tick labels, grid lines, and the zero line if needed. */
+export function drawAxes(ctx: RenderContext, xCenters: number[]) {
+  const { sketch, root, plot, rows, yScale, yTicks, formatTick } = ctx;
+  const right = plot.left + plot.width;
+  const bottom = plot.top + plot.height;
 
   // X axis line
-  svg.appendChild(
-    rc.line(margin.left, bottom, margin.left + chartWidth, bottom, {
+  root.appendChild(
+    sketch.line("x-axis", plot.left, bottom, right, bottom, {
       roughness: 0.8,
       stroke: "black",
       strokeWidth: 1.5,
@@ -75,8 +47,8 @@ export function drawAxes({
   );
 
   // Y axis line
-  svg.appendChild(
-    rc.line(margin.left, margin.top, margin.left, bottom, {
+  root.appendChild(
+    sketch.line("y-axis", plot.left, plot.top, plot.left, bottom, {
       roughness: 0.8,
       stroke: "black",
       strokeWidth: 1.5,
@@ -84,9 +56,11 @@ export function drawAxes({
   );
 
   // Zero line when the data dips below zero
-  if (zeroY !== undefined && Math.abs(zeroY - bottom) > 1) {
-    svg.appendChild(
-      rc.line(margin.left, zeroY, margin.left + chartWidth, zeroY, {
+  const [lo, hi] = yScale.domain();
+  const zeroY = yScale(0);
+  if (lo < 0 && hi >= 0 && Math.abs(zeroY - bottom) > 1) {
+    root.appendChild(
+      sketch.line("zero-line", plot.left, zeroY, right, zeroY, {
         roughness: 0.8,
         stroke: "#555",
         strokeWidth: 1,
@@ -95,31 +69,33 @@ export function drawAxes({
   }
 
   // X axis ticks and labels
-  xTicks.forEach(({ x, label }) => {
+  xCenters.forEach((x, i) => {
+    const label = rows[i].label;
     const display =
       label.length > MAX_LABEL_CHARS
         ? `${label.slice(0, MAX_LABEL_CHARS - 1)}…`
         : label;
 
-    const labelY = bottom + (rotateLabels ? 20 : 25);
-    const text = svgText(
-      {
-        x,
-        y: labelY,
-        "text-anchor": rotateLabels ? "end" : "middle",
-        "font-family": FONT_FAMILY,
-        "font-size": 14,
-        fill: "black",
-        ...(rotateLabels
-          ? { transform: `rotate(-30 ${x} ${labelY})` }
-          : {}),
-      },
-      display
+    const labelY = bottom + (ctx.rotateXLabels ? 20 : 25);
+    root.appendChild(
+      svgText(
+        {
+          x,
+          y: labelY,
+          "text-anchor": ctx.rotateXLabels ? "end" : "middle",
+          "font-family": FONT_FAMILY,
+          "font-size": TICK_FONT_SIZE,
+          fill: "black",
+          ...(ctx.rotateXLabels
+            ? { transform: `rotate(-30 ${x} ${labelY})` }
+            : {}),
+        },
+        display
+      )
     );
-    svg.appendChild(text);
 
-    svg.appendChild(
-      rc.line(x, bottom, x, bottom + 5, {
+    root.appendChild(
+      sketch.line(`x-tick-${i}`, x, bottom, x, bottom + 5, {
         roughness: 0.5,
         stroke: "black",
         strokeWidth: 1,
@@ -129,24 +105,24 @@ export function drawAxes({
 
   // Y axis ticks, labels, and grid lines
   yTicks.forEach((tickVal) => {
-    const y = margin.top + yScale(tickVal);
+    const y = yScale(tickVal);
 
-    svg.appendChild(
+    root.appendChild(
       svgText(
         {
-          x: margin.left - 10,
+          x: plot.left - Y_TICK_GAP,
           y: y + 4,
           "text-anchor": "end",
           "font-family": FONT_FAMILY,
-          "font-size": 14,
+          "font-size": TICK_FONT_SIZE,
           fill: "black",
         },
-        String(tickVal)
+        formatTick(tickVal)
       )
     );
 
-    svg.appendChild(
-      rc.line(margin.left, y, margin.left + chartWidth, y, {
+    root.appendChild(
+      sketch.line(`grid-${tickVal}`, plot.left, y, right, y, {
         roughness: 0.5,
         stroke: "#ddd",
         strokeWidth: 0.5,

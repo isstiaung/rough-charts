@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseCsvText } from "./csv";
+import { parseCsvText, parseNumber } from "./csv";
 
 describe("parseCsvText", () => {
   it("parses labels, series names, and numeric data", () => {
@@ -42,13 +42,64 @@ describe("parseCsvText", () => {
   });
 
   it("throws on empty input", () => {
-    expect(() => parseCsvText("")).toThrow("CSV file is empty");
-    expect(() => parseCsvText("Name,Value")).toThrow("CSV file is empty");
+    expect(() => parseCsvText("")).toThrow("No data rows found");
+    expect(() => parseCsvText("Name,Value")).toThrow("No data rows found");
   });
 
   it("throws when there are fewer than 2 columns", () => {
-    expect(() => parseCsvText("Name\nA\nB")).toThrow(
-      "CSV must have at least 2 columns"
-    );
+    expect(() => parseCsvText("Name\nA\nB")).toThrow("Need at least 2 columns");
   });
+
+  it("reads quoted values with thousands separators and currency", () => {
+    const result = parseCsvText(
+      'Region,Revenue\nNorth,"1,500,000"\nSouth,"$1,200"'
+    );
+    expect(result.data).toEqual([[1500000], [1200]]);
+  });
+
+  it("parses tab-separated cells pasted from a spreadsheet", () => {
+    const result = parseCsvText(
+      "Region\tRevenue\tCosts\r\nNorth\t1,500\t900\r\nSouth\t1,200\t1,100\r\n"
+    );
+    expect(result.seriesNames).toEqual(["Revenue", "Costs"]);
+    expect(result.labels).toEqual(["North", "South"]);
+    expect(result.data).toEqual([
+      [1500, 900],
+      [1200, 1100],
+    ]);
+  });
+
+  it("trims header whitespace", () => {
+    expect(parseCsvText("Name , Value \nA,1").seriesNames).toEqual(["Value"]);
+  });
+
+  it("rejects data beyond the row limit", () => {
+    const text = "Name,Value\n" + "A,1\n".repeat(1001);
+    expect(() => parseCsvText(text)).toThrow("Too many rows");
+  });
+});
+
+describe("parseNumber", () => {
+  it.each([
+    ["42", 42],
+    ["-5.5", -5.5],
+    [" 7 ", 7],
+    ["1,234.5", 1234.5],
+    ["$1,200", 1200],
+    ["€99", 99],
+    ["45%", 45],
+    ["(1,200)", -1200],
+    ["\u22123", -3],
+    ["1e3", 1000],
+    [".5", 0.5],
+  ])("reads %j as %d", (raw, expected) => {
+    expect(parseNumber(raw)).toBe(expected);
+  });
+
+  it.each(["", "abc", "12abc", "0x10", "1.2.3", "Infinity", "-"])(
+    "rejects %j",
+    (raw) => {
+      expect(parseNumber(raw)).toBeNaN();
+    }
+  );
 });
