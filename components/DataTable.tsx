@@ -41,7 +41,7 @@ function NumberCell({
       onChange={(e) => {
         setText(e.target.value);
         const parsed = parseFloat(e.target.value);
-        if (!isNaN(parsed)) onCommit(parsed);
+        if (Number.isFinite(parsed)) onCommit(parsed);
       }}
     />
   );
@@ -75,6 +75,7 @@ export default function DataTable() {
                 />
                 {seriesNames.length > 1 && (
                   <button
+                    type="button"
                     onClick={() => deleteSeries(i)}
                     className="btn btn-ghost btn-xs absolute -top-1 -right-1 text-error"
                     title="Delete series"
@@ -87,6 +88,7 @@ export default function DataTable() {
             ))}
             <th>
               <button
+                type="button"
                 onClick={addSeries}
                 className="btn btn-ghost btn-xs text-success"
                 title="Add series"
@@ -121,6 +123,7 @@ export default function DataTable() {
               <td>
                 {rows.length > 1 && (
                   <button
+                    type="button"
                     onClick={() => deleteRow(rowIdx)}
                     className="btn btn-ghost btn-xs text-error"
                     title="Delete row"
@@ -134,7 +137,11 @@ export default function DataTable() {
           ))}
         </tbody>
       </table>
-      <button onClick={addRow} className="btn btn-sm btn-outline mt-2 w-full">
+      <button
+        type="button"
+        onClick={addRow}
+        className="btn btn-sm btn-outline mt-2 w-full"
+      >
         + Add Row
       </button>
     </div>

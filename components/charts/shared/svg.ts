@@ -20,13 +20,31 @@ export function svgText(
   return el;
 }
 
-/** getComputedTextLength requires a rendered element; fall back to an estimate. */
-export function measureTextWidth(el: SVGTextElement, fontSize: number): number {
-  try {
-    const length = el.getComputedTextLength();
-    if (length > 0) return length;
-  } catch {
-    // not rendered yet
-  }
-  return (el.textContent?.length ?? 0) * fontSize * 0.55;
+/**
+ * Rendered widths of `texts` in the given font. Needs `parent` to be attached
+ * to the document; falls back to an estimate where layout isn't available.
+ */
+export function measureTextWidths(
+  parent: SVGElement,
+  texts: string[],
+  fontFamily: string,
+  fontSize: number
+): number[] {
+  const probe = svgText(
+    { "font-family": fontFamily, "font-size": fontSize, visibility: "hidden" },
+    ""
+  );
+  parent.appendChild(probe);
+  const widths = texts.map((text) => {
+    probe.textContent = text;
+    try {
+      const length = probe.getComputedTextLength();
+      if (length > 0) return length;
+    } catch {
+      // not rendered
+    }
+    return text.length * fontSize * 0.55;
+  });
+  parent.removeChild(probe);
+  return widths;
 }

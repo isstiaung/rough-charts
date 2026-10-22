@@ -1,3 +1,6 @@
+import { EXPORT_EXCLUDE_ATTR } from "@/components/charts/shared/config";
+import { bytesToBase64 } from "./base64";
+
 export type ExportFormat = "png" | "svg" | "jpeg";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -11,12 +14,7 @@ async function getFontDataUrl(): Promise<string> {
     const res = await fetch("/fonts/xkcd-script.woff2");
     if (!res.ok) throw new Error("Failed to load chart font");
     const bytes = new Uint8Array(await res.arrayBuffer());
-    let binary = "";
-    const chunkSize = 8192;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-    return `data:font/woff2;base64,${btoa(binary)}`;
+    return `data:font/woff2;base64,${bytesToBase64(bytes)}`;
   })();
 
   try {
@@ -35,7 +33,8 @@ interface SvgMarkup {
 
 /**
  * Serializes the live chart svg into a self-contained SVG document:
- * white background, embedded font, explicit dimensions.
+ * white background, embedded font, explicit dimensions, and none of the
+ * invisible hover/focus targets.
  */
 async function buildSvgMarkup(): Promise<SvgMarkup> {
   const source = document.querySelector<SVGSVGElement>("#chart-container svg");
@@ -51,6 +50,9 @@ async function buildSvgMarkup(): Promise<SvgMarkup> {
   clone.setAttribute("viewBox", `0 0 ${width} ${height}`);
   clone.removeAttribute("role");
   clone.removeAttribute("aria-label");
+  clone
+    .querySelectorAll(`[${EXPORT_EXCLUDE_ATTR}]`)
+    .forEach((el) => el.remove());
 
   const background = document.createElementNS(SVG_NS, "rect");
   background.setAttribute("width", String(width));

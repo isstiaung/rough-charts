@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { paddedDomain, stackSegments, stackTotals } from "./scales";
+import {
+  fittedDomain,
+  paddedDomain,
+  stackSegments,
+  stackTotals,
+} from "./scales";
 
 describe("paddedDomain", () => {
   it("pads a positive-only domain and anchors it at zero", () => {
@@ -63,5 +68,22 @@ describe("stackTotals", () => {
 
   it("handles all-positive rows", () => {
     expect(stackTotals([1, 2, 3])).toEqual([6, 0]);
+  });
+});
+
+describe("fittedDomain", () => {
+  it("fits the data range instead of anchoring at zero", () => {
+    const [lo, hi] = fittedDomain([980, 1000]);
+    expect(lo).toBeCloseTo(978);
+    expect(hi).toBeCloseTo(1002);
+  });
+
+  it("pads a flat series so it isn't drawn on the edge", () => {
+    expect(fittedDomain([50, 50])).toEqual([45, 55]);
+    expect(fittedDomain([0, 0])).toEqual([-1, 1]);
+  });
+
+  it("falls back to [0, 10] without data", () => {
+    expect(fittedDomain([])).toEqual([0, 10]);
   });
 });

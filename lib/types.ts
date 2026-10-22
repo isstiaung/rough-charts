@@ -11,16 +11,19 @@ export interface ChartData {
   rows: DataRow[];
 }
 
-export type ChartType = "grouped-bar" | "stacked-bar" | "line";
+export const CHART_TYPES = ["grouped-bar", "stacked-bar", "line"] as const;
+export type ChartType = (typeof CHART_TYPES)[number];
 
-export type FillStyle =
-  | "hachure"
-  | "solid"
-  | "zigzag"
-  | "cross-hatch"
-  | "dots"
-  | "dashed"
-  | "zigzag-line";
+export const FILL_STYLES = [
+  "hachure",
+  "solid",
+  "zigzag",
+  "cross-hatch",
+  "dots",
+  "dashed",
+  "zigzag-line",
+] as const;
+export type FillStyle = (typeof FILL_STYLES)[number];
 
 export interface ChartOptions {
   roughness: number;
@@ -30,6 +33,9 @@ export interface ChartOptions {
   seed: number;
 }
 
+/** Everything that defines a chart: what gets saved, shared, and undone. */
+export type ChartSnapshot = ChartData & ChartOptions;
+
 export interface TooltipData {
   x: number;
   y: number;
@@ -37,7 +43,7 @@ export interface TooltipData {
   items: { color: string; name: string; value: number }[];
 }
 
-export interface ChartStore extends ChartData, ChartOptions {
+export interface ChartStore extends ChartSnapshot {
   setTitle: (title: string) => void;
   setXLabel: (xLabel: string) => void;
   setYLabel: (yLabel: string) => void;
@@ -57,5 +63,6 @@ export interface ChartStore extends ChartData, ChartOptions {
     seriesNames: string[],
     data: number[][]
   ) => void;
+  loadSnapshot: (snapshot: ChartSnapshot) => void;
   resetToDefaults: () => void;
 }

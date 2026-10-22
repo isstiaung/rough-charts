@@ -24,6 +24,7 @@ export default function ExportButton() {
   const handleExport = async (format: ExportFormat) => {
     // Close the daisyUI focus-based dropdown
     (document.activeElement as HTMLElement | null)?.blur();
+    if (exporting) return;
     setExporting(true);
     setError(null);
     try {
@@ -41,6 +42,8 @@ export default function ExportButton() {
       <div
         tabIndex={0}
         role="button"
+        aria-haspopup="menu"
+        aria-disabled={exporting}
         className="btn btn-sm btn-secondary w-full"
       >
         {exporting ? "Exporting..." : "Export"}
@@ -51,7 +54,11 @@ export default function ExportButton() {
       >
         {formats.map((f) => (
           <li key={f.value}>
-            <button type="button" onClick={() => handleExport(f.value)}>
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={() => handleExport(f.value)}
+            >
               {f.label}
             </button>
           </li>

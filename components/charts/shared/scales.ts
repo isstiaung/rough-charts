@@ -11,6 +11,18 @@ export function paddedDomain(values: number[]): [number, number] {
   return [lo * 1.15, hi * 1.15];
 }
 
+/**
+ * Y domain fitted to the data's own range with headroom, for line charts,
+ * where forcing a zero baseline would flatten series like 980–1000.
+ */
+export function fittedDomain(values: number[]): [number, number] {
+  const lo = min(values);
+  const hi = max(values);
+  if (lo === undefined || hi === undefined) return [0, 10];
+  const pad = lo === hi ? Math.abs(lo) * 0.1 || 1 : (hi - lo) * 0.1;
+  return [lo - pad, hi + pad];
+}
+
 export interface StackSegment {
   start: number;
   end: number;
